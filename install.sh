@@ -1,27 +1,29 @@
-FROM ubuntu:20.04
-WORKDIR /tmp
-RUN apt update -y
-RUN apt upgrade -y
+#!/usr/bin/env bash
+mkdir app && cd app
 
-RUN apt install curl -y
-RUN curl -sO https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb
-RUN dpkg -i packages-microsoft-prod.deb
+apt update -y
+apt upgrade -y
 
-RUN apt update -y
-RUN apt upgrade -y
-RUN apt install apt-transport-https \
-                aspnetcore-runtime-3.1 \
-                systemctl -y
+apt install curl -y
+curl -sO https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb
+dpkg -i packages-microsoft-prod.deb
+rm -rf packages-microsoft-prod.deb
 
-COPY ./identity/bin/Debug/netcoreapp3.1/publish /app
+apt update -y
+apt upgrade -y
+apt install apt-transport-https \
+                dotnet-sdk-3.1 \
+                systemctl \
+                nginx \
+                git -y
 
-COPY ./identity.service /etc/systemd/system/
-RUN echo "### wating 10 seconds before systemctl apsnetcore app service init ###"
-RUN sleep 10
-RUN systemctl daemon-reload
-RUN systemctl start identity.service
-RUN systemctl
+git clone https://github.com/Olddude/identity.git && cd identity
+cp ./identity.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl start identity.service
 
-RUN apt install nginx -y
-COPY ./nginx.conf /etc/nginx/sites-available/default
-CMD ["nginx", "-g", "daemon off;"]
+cp ./nginx.conf /etc/nginx/sites-available/default
+
+dotnet restore
+dotnet build
+dotnet publish
