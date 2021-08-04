@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+cd /
 mkdir app && cd app
 
 apt update -y
